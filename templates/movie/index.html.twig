@@ -1,0 +1,1372 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}🎬 MovieCatalog - Admin Control{% endblock %}
+
+{% block body %}
+<style>
+    /* Լռելյայն փոփոխականներ Մութ թեմայի համար (Dark Mode) */
+    :root {
+        --bg-color: #141414;
+        --card-bg: #1f1f1f;
+        --text-color: #ffffff;
+        --text-muted: #b3b3b3;
+        --navbar-bg: #000000;
+        --input-bg: #2b2b2b;
+        --input-border: #333;
+        --modal-bg: #1f1f1f;
+        --modal-movie-bg: #181818;
+        --hero-gradient: linear-gradient(180deg, rgba(229, 9, 20, 0.15) 0%, rgba(20, 20, 20, 0) 100%);
+    }
+
+    /* Փոփոխականներ Բաց թեմայի համար (Light Mode) */
+    [data-theme="light"] {
+        --bg-color: #f5f5f7;
+        --card-bg: #ffffff;
+        --text-color: #1d1d1f;
+        --text-muted: #6e6e73;
+        --navbar-bg: #ffffff;
+        --input-bg: #e8e8ed;
+        --input-border: #d2d2d7;
+        --modal-bg: #ffffff;
+        --modal-movie-bg: #f5f5f7;
+        --hero-gradient: linear-gradient(180deg, rgba(229, 9, 20, 0.08) 0%, rgba(245, 245, 247, 0) 100%);
+    }
+
+    body { 
+        background-color: var(--bg-color); 
+        color: var(--text-color); 
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        margin: 0; 
+        transition: background-color 0.3s, color 0.3s;
+    }
+    
+    /* Վերևի Նավիգացիոն Պանել (Header) */
+    .navbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: var(--navbar-bg);
+        padding: 15px 40px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        transition: background-color 0.3s;
+    }
+    .navbar-brand {
+        color: #E50914;
+        font-size: 1.8rem;
+        font-weight: bold;
+        text-decoration: none;
+    }
+    .nav-links {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+    }
+    .nav-link-item {
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 1.1rem;
+        font-weight: 500;
+        transition: color 0.2s;
+        cursor: pointer;
+    }
+    .nav-link-item:hover, .nav-link-item.active {
+        color: var(--text-color);
+    }
+    .nav-controls {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    /* Լեզվի Ընտրության Դաշտ */
+    .lang-select {
+        background-color: var(--input-bg);
+        color: var(--text-color);
+        border: 1px solid var(--input-border);
+        padding: 8px 12px;
+        font-size: 0.95rem;
+        border-radius: 4px;
+        cursor: pointer;
+        outline: none;
+        transition: border-color 0.2s, background-color 0.3s, color 0.3s;
+    }
+    .lang-select:focus {
+        border-color: #E50914;
+    }
+
+    /* Թեմայի Փոփոխման Կոճակ */
+    .theme-toggle-btn {
+        background: var(--input-bg);
+        border: 1px solid var(--input-border);
+        color: var(--text-color);
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        transition: background-color 0.3s, transform 0.2s;
+    }
+    .theme-toggle-btn:hover {
+        transform: scale(1.1);
+    }
+
+    .nav-btn {
+        background-color: transparent;
+        color: var(--text-color);
+        border: 2px solid var(--text-color);
+        padding: 8px 20px;
+        font-size: 1rem;
+        font-weight: bold;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .nav-btn:hover {
+        background-color: var(--text-color);
+        color: var(--bg-color);
+    }
+    .login-btn {
+        background-color: #E50914;
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        font-size: 1rem;
+        font-weight: bold;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.1s;
+    }
+    .login-btn:hover {
+        background-color: #b80710;
+        transform: scale(1.05);
+    }
+
+    /* Հիմնական Կոնտենտ */
+    .container { max-width: 1200px; margin: 40px auto; padding: 20px; }
+    
+    /* ԳԼԽԱՎՈՐ ԷՋԻ ՈՂՋՈՒՅՆԻ ԲԱԺԻՆ */
+    .hero-section {
+        text-align: center;
+        padding: 60px 20px;
+        background: var(--hero-gradient);
+        border-radius: 12px;
+        margin-bottom: 40px;
+        transition: background 0.3s;
+    }
+    .hero-section h1 { font-size: 3.5rem; color: var(--text-color); margin-bottom: 15px; }
+    .hero-section p { font-size: 1.3rem; color: var(--text-muted); max-width: 600px; margin: 0 auto 30px auto; }
+    
+    /* ՈՐՈՆՄԱՆ ԴԱՇՏ ԵՎ ԺԱՆՐԵՐԻ ՑՈՒՑԱԿ */
+    .search-wrapper {
+        max-width: 600px;
+        margin: 0 auto;
+        position: relative;
+    }
+    .search-input {
+        width: 100%;
+        padding: 16px 20px 16px 50px;
+        font-size: 1.1rem;
+        background-color: var(--input-bg);
+        border: 2px solid transparent;
+        border-radius: 50px;
+        color: var(--text-color);
+        box-sizing: border-box;
+        transition: all 0.3s;
+    }
+    .search-input:focus {
+        outline: none;
+        border-color: #E50914;
+        background-color: var(--card-bg);
+        box-shadow: 0 0 15px rgba(229, 9, 20, 0.3);
+    }
+    .search-icon {
+        position: absolute;
+        left: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1.2rem;
+        color: var(--text-muted);
+    }
+
+    /* Ժանրերի բացվող ցուցակը */
+    .genres-dropdown {
+        position: absolute;
+        top: 110%;
+        left: 0;
+        width: 100%;
+        background-color: var(--card-bg);
+        border: 1px solid var(--input-border);
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        display: none;
+        z-index: 10;
+        padding: 15px;
+        box-sizing: border-box;
+    }
+    .genres-dropdown.show {
+        display: block;
+    }
+    .genres-dropdown h4 {
+        margin: 0 0 10px 5px;
+        color: #E50914;
+        font-size: 1rem;
+        text-align: left;
+    }
+    .genres-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 10px;
+    }
+    .genre-badge-btn {
+        background-color: var(--input-bg);
+        color: var(--text-color);
+        border: none;
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        text-align: center;
+    }
+    .genre-badge-btn:hover {
+        background-color: #E50914;
+        color: white;
+    }
+
+    /* Ֆիլմերի Ցանց */
+    .section-title {
+        font-size: 2rem;
+        margin-bottom: 25px;
+        border-left: 5px solid #E50914;
+        padding-left: 15px;
+    }
+    .movie-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; }
+    .movie-card { 
+        background: var(--card-bg); 
+        border-radius: 10px; 
+        overflow: hidden; 
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15); 
+        transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s; 
+        display: flex; 
+        flex-direction: column; 
+        justify-content: space-between; 
+        cursor: pointer;
+    }
+    .movie-card:hover { 
+        transform: scale(1.03); 
+        box-shadow: 0 8px 16px rgba(229, 9, 20, 0.2); 
+    }
+    .movie-img { width: 100%; height: 350px; object-fit: cover; object-position: center; }
+    .movie-content { padding: 15px; display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between; }
+    .movie-card h3 { margin-top: 0; color: var(--text-color); font-size: 1.15rem; line-height: 1.3; }
+    .movie-card p { color: var(--text-muted); font-size: 0.85rem; line-height: 1.4; flex-grow: 1; margin: 10px 0; }
+    .genre { display: inline-block; background: #E50914; color: white; padding: 5px 10px; border-radius: 4px; font-size: 10px; font-weight: bold; align-self: flex-start; }
+
+    /* Չգտնված ֆիլմի հաղորդագրություն */
+    .no-results {
+        display: none;
+        text-align: center;
+        padding: 40px;
+        font-size: 1.4rem;
+        color: var(--text-muted);
+        background-color: var(--card-bg);
+        border-radius: 10px;
+        border: 1px dashed var(--input-border);
+        grid-column: 1 / -1;
+    }
+
+    /* Էջերի Ցուցադրություն */
+    .page-section { display: none; }
+    .page-section.active { display: block; }
+
+    /* Admin Panel */
+    .admin-container {
+        max-width: 1100px;
+        margin: 50px auto;
+        padding: 30px;
+        background-color: var(--card-bg);
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        transition: background-color 0.3s;
+    }
+    .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid var(--input-border);
+        padding-bottom: 20px;
+        margin-bottom: 30px;
+    }
+    .admin-header h2 { margin: 0; color: #E50914; }
+    
+    .admin-form-section {
+        margin-bottom: 40px;
+        padding-bottom: 25px;
+        border-bottom: 1px dashed var(--input-border);
+    }
+    .admin-form-section h3 {
+        color: var(--text-color);
+        margin-bottom: 15px;
+        font-size: 1.3rem;
+    }
+
+    .admin-form {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        background-color: var(--bg-color);
+        padding: 20px;
+        border-radius: 8px;
+        transition: background-color 0.3s;
+    }
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+    }
+    .admin-form .form-group { margin-bottom: 0; }
+    .admin-form label { display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 0.9rem; }
+    .admin-form input, .admin-form select, .admin-form textarea {
+        width: 100%; padding: 10px;
+        border: 1px solid var(--input-border); border-radius: 4px;
+        background-color: var(--input-bg); color: var(--text-color);
+        box-sizing: border-box;
+        font-family: inherit;
+        transition: background-color 0.3s, color 0.3s;
+    }
+    .admin-form input:focus, .admin-form select:focus, .admin-form textarea:focus { border-color: #E50914; outline: none; }
+    
+    .add-user-btn {
+        background-color: #E50914; color: white; border: none;
+        padding: 11px 25px; font-size: 1rem; font-weight: bold;
+        border-radius: 4px; cursor: pointer; transition: background-color 0.2s;
+        align-self: flex-start;
+    }
+    .add-user-btn:hover { background-color: #b80710; }
+
+    .users-table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 30px; }
+    .users-table th, .users-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--input-border); }
+    .users-table th { background-color: var(--bg-color); color: #E50914; font-weight: bold; transition: background-color 0.3s; }
+    .users-table tr:hover { background-color: var(--input-bg); }
+    
+    .delete-btn {
+        background-color: #e50914; color: white; border: none;
+        padding: 6px 12px; border-radius: 4px; cursor: pointer;
+        font-size: 0.85rem; transition: background-color 0.2s;
+    }
+    .delete-btn:hover { background-color: #b80710; }
+
+    /* Modal */
+    .modal-overlay {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: none; justify-content: center; align-items: center;
+        z-index: 1000;
+    }
+    .modal-content {
+        background-color: var(--modal-bg); padding: 40px; border-radius: 8px;
+        width: 100%; max-width: 400px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        position: relative;
+        transition: background-color 0.3s;
+    }
+    .close-btn { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; }
+    .close-btn:hover { color: var(--text-color); }
+    .modal-content h2 { margin-top: 0; color: var(--text-color); margin-bottom: 25px; text-align: center; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 0.9rem; }
+    .form-group input {
+        width: 100%; padding: 12px; border: 1px solid var(--input-border); border-radius: 4px;
+        background-color: var(--input-bg); color: var(--text-color); font-size: 1rem; box-sizing: border-box;
+        transition: background-color 0.3s, color 0.3s;
+    }
+    .form-group input:focus { outline: none; border-color: #E50914; }
+    .submit-btn {
+        width: 100%; padding: 12px; background-color: #E50914; color: white;
+        border: none; border-radius: 4px; font-size: 1.1rem; font-weight: bold;
+        cursor: pointer; transition: background-color 0.2s;
+    }
+    .submit-btn:hover { background-color: #b80710; }
+
+    /* Movie details Modal */
+    .movie-modal-overlay {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        display: none; justify-content: center; align-items: center;
+        z-index: 1001; padding: 20px; box-sizing: border-box;
+    }
+    .movie-modal-content {
+        background-color: var(--modal-movie-bg); border-radius: 12px;
+        width: 100%; max-width: 850px; overflow: hidden;
+        box-shadow: 0 0 30px rgba(229, 9, 20, 0.2);
+        position: relative; display: flex; flex-direction: row;
+        transition: background-color 0.3s;
+    }
+    @media (max-width: 768px) {
+        .movie-modal-content { flex-direction: column; }
+        .movie-modal-img { height: 250px !important; width: 100% !important; }
+    }
+    .movie-modal-img { width: 40%; height: 520px; object-fit: cover; }
+    .movie-modal-details {
+        padding: 35px; width: 60%;
+        display: flex; flex-direction: column;
+        justify-content: center; box-sizing: border-box;
+    }
+    .movie-modal-details h2 { margin-top: 0; font-size: 1.8rem; color: var(--text-color); margin-bottom: 10px; }
+    .movie-modal-details .modal-genre { align-self: flex-start; margin-bottom: 15px; }
+    .movie-modal-details p { color: var(--text-color); opacity: 0.9; font-size: 0.95rem; line-height: 1.5; margin-bottom: 30px; }
+    
+    .movie-modal-close {
+        position: absolute; top: 15px; right: 20px;
+        font-size: 2rem; color: #fff; cursor: pointer; z-index: 10;
+        background-color: rgba(0,0,0,0.5); width: 40px; height: 40px;
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        transition: background-color 0.2s;
+    }
+    .movie-modal-close:hover { background-color: #E50914; }
+</style>
+
+<header class="navbar">
+    <a href="#" class="navbar-brand" id="logoLink">🎬 MovieCatalog</a>
+    <nav class="nav-links">
+        <span class="nav-link-item active" id="homeNav" data-translate="home_nav">Գլխավոր</span>
+        <span class="nav-link-item" id="filmsNav" data-translate="films_nav">Ֆիլմեր</span>
+    </nav>
+    <div class="nav-controls">
+        <select id="langSelect" class="lang-select">
+            <option value="hy">Հայերեն</option>
+            <option value="en">English</option>
+            <option value="ru">Русский</option>
+        </select>
+
+        <button id="themeToggleBtn" class="theme-toggle-btn" title="Toggle Theme">
+            🌙
+        </button>
+        
+        <button class="nav-btn" id="adminPageBtn" data-translate="admin_btn">Admin Panel</button>
+        <button class="login-btn" id="openModalBtn" data-translate="login_btn">Log In</button>
+    </div>
+</header>
+
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal-content">
+        <span class="close-btn" id="closeModalBtn">&times;</span>
+        <h2 id="modalTitle" data-translate="modal_title">Մուտք / Գրանցում</h2>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email" data-translate="email_label">Էլ. հասցե</label>
+                <input type="email" id="email" placeholder="example@mail.com" required>
+            </div>
+            <div class="form-group">
+                <label for="password" data-translate="password_label">Գաղտնաբառ</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="submit-btn" id="modalSubmitBtn" data-translate="login_submit">Մուտք Գործել</button>
+        </form>
+    </div>
+</div>
+
+<div class="movie-modal-overlay" id="movieModalOverlay">
+    <div class="movie-modal-content">
+        <span class="movie-modal-close" id="closeMovieModalBtn">&times;</span>
+        <img class="movie-modal-img" id="modalMovieImg" src="" alt="">
+        <div class="movie-modal-details">
+            <h2 id="modalMovieTitle">Ֆիլմի վերնագիր</h2>
+            <span class="genre modal-genre" id="modalMovieGenre">Ժանր</span>
+            <p id="modalMovieDesc">Ֆիլմի նկարագրությունը:</p>
+            
+            <a href="#" target="_blank" class="submit-btn" id="watchTrailerBtn" style="text-align: center; text-decoration: none; display: block;" data-translate="watch_trailer">🎬 Դիտել Թրեյլերը YouTube-ում</a>
+        </div>
+    </div>
+</div>
+
+<div id="homePage" class="container page-section active">
+    <div class="hero-section">
+        <h1 data-translate="hero_title">Բարի գալուստ MovieCatalog</h1>
+        <p data-translate="hero_subtitle">Փնտրիր և բացահայտիր քո սիրելի ֆիլմերն ու դրանց պաշտոնական թրեյլերները մեկ վայրում։</p>
+        
+        <div class="search-wrapper" id="searchContainer">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="movieSearch" class="search-input" placeholder="Մուտքագրեք անվանումը և սեղմեք Enter..." autocomplete="off">
+            
+            <div class="genres-dropdown" id="genresDropdown">
+                <h4 data-translate="dropdown_title">🎭 Ընտրեք Ժանրը</h4>
+                <div class="genres-grid">
+                    <button class="genre-badge-btn" data-genre-key="scifi" data-translate="genre_scifi">Գիտ. Ֆանտաստիկա</button>
+                    <button class="genre-badge-btn" data-genre-key="drama" data-translate="genre_drama">Դրամա</button>
+                    <button class="genre-badge-btn" data-genre-key="action" data-translate="genre_action">Մարտաֆիլմ</button>
+                    <button class="genre-badge-btn" data-genre-key="thriller" data-translate="genre_thriller">Դետեկտիվ</button>
+                    <button class="genre-badge-btn" data-genre-key="comedy" data-translate="genre_comedy">Կատակերգություն</button>
+                    <button class="genre-badge-btn" data-genre-key="fantasy" data-translate="genre_fantasy">Ֆենտեզի</button>
+                    <button class="genre-badge-btn" data-genre-key="animation" data-translate="genre_animation">Անիմացիա</button>
+                    <button class="genre-badge-btn" data-genre-key="all" data-translate="genre_all">Բոլորը</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="section-title" data-translate="trending_title">Թրենդային Ֆիլմեր</h2>
+    <div class="movie-grid" id="featuredMoviesGrid">
+        </div>
+</div>
+
+<div id="filmsPage" class="container page-section">
+    <h2 class="section-title" data-translate="all_movies_title">Բոլոր Ֆիլմերը</h2>
+    
+    <div class="movie-grid" id="moviesCatalogGrid">
+        </div>
+    
+    <div id="noResultsMessage" class="no-results" data-translate="no_movie_found">
+        Այդպիսի ֆիլմ գոյություն չունի
+    </div>
+</div>
+
+<div id="adminPage" class="page-section">
+    <div class="admin-container">
+        <div class="admin-header">
+            <h2 data-translate="admin_title_header">⚙️ Օգտատերերի և Ֆիլմերի Կառավարման Վահանակ</h2>
+            <button class="nav-btn" id="backToHomeBtn" data-translate="back_home">← Հետ Դեպի Գլխավոր</button>
+        </div>
+
+        <div class="admin-form-section">
+            <h3 data-translate="admin_add_movie_section">🎬 Ավելացնել Նոր Ֆիլմ</h3>
+            <form class="admin-form" id="addMovieForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="movieImgUrl" data-translate="admin_movie_img">Նկարի հղում (URL)</label>
+                        <input type="url" id="movieImgUrl" placeholder="https://..." required>
+                    </div>
+                    <div class="form-group">
+                        <label for="movieGenreKey" data-translate="admin_movie_genre">Ժանրի տեսակ</label>
+                        <select id="movieGenreKey" required>
+                            <option value="scifi">Գիտ. Ֆանտաստիկա</option>
+                            <option value="drama">Դրամա</option>
+                            <option value="action">Մարտաֆիլմ</option>
+                            <option value="thriller">Դետեկտիվ</option>
+                            <option value="comedy">Կատակերգություն</option>
+                            <option value="fantasy">Ֆենտեզի</option>
+                            <option value="animation">Անիմացիա</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="movieTrailerId" data-translate="admin_movie_trailer">YouTube Trailer ID</label>
+                        <input type="text" id="movieTrailerId" placeholder="zSWdZVtXT7E" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="movieTitleHy">Վերնագիր (Հայերեն)</label>
+                        <input type="text" id="movieTitleHy" placeholder="Ինտերստելար" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="movieTitleEn">Title (English)</label>
+                        <input type="text" id="movieTitleEn" placeholder="Interstellar" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="movieTitleRu">Название (Русский)</label>
+                        <input type="text" id="movieTitleRu" placeholder="Интерстеллар" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="movieShortDescHy">Կարճ նկարագիր (Հայերեն)</label>
+                        <input type="text" id="movieShortDescHy" placeholder="Ֆիլմ տիեզերագնացների մասին..." required>
+                    </div>
+                    <div class="form-group">
+                        <label for="movieShortDescEn">Short Desc (English)</label>
+                        <input type="text" id="movieShortDescEn" placeholder="A team of explorers..." required>
+                    </div>
+                    <div class="form-group">
+                        <label for="movieShortDescRu">Краткое описание (Русский)</label>
+                        <input type="text" id="movieShortDescRu" placeholder="Фильм о космонавтах..." required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="movieFullDescHy">Ամբողջական նկարագրություն (Հայերեն)</label>
+                    <textarea id="movieFullDescHy" rows="2" placeholder="Ֆիլմ տիեզերագնացների մասին..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="movieFullDescEn">Full Description (English)</label>
+                    <textarea id="movieFullDescEn" rows="2" placeholder="When Earth becomes uninhabitable..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="movieFullDescRu">Полное описание (Русский)</label>
+                    <textarea id="movieFullDescRu" rows="2" placeholder="Когда засуха..." required></textarea>
+                </div>
+
+                <button type="submit" class="add-user-btn" data-translate="admin_add_movie_btn">Ավելացնել Ֆիլմ</button>
+            </form>
+
+            <h3 style="margin-top: 30px;" data-translate="admin_movies_list">🎬 Գոյություն ունեցող Ֆիլմեր</h3>
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th data-translate="table_movie_title">Անվանում</th>
+                        <th data-translate="table_movie_genre">Ժանր</th>
+                        <th data-translate="table_action">Գործողություն</th>
+                    </tr>
+                </thead>
+                <tbody id="adminMoviesTableBody">
+                    </tbody>
+            </table>
+        </div>
+
+        <div class="admin-form-section" style="border: none; padding: 0; margin: 0;">
+            <h3 data-translate="admin_add_user_section">👥 Ավելացնել Նոր Օգտատեր</h3>
+            <form class="admin-form" id="addUserForm" style="flex-direction: row; align-items: end; flex-wrap: wrap;">
+                <div class="form-group" style="flex: 1; min-width: 200px;">
+                    <label for="newUsername" data-translate="admin_name_label">Անուն</label>
+                    <input type="text" id="newUsername" required>
+                </div>
+                <div class="form-group" style="flex: 1; min-width: 200px;">
+                    <label for="newUserEmail" data-translate="admin_email_label">Էլ. հասցե</label>
+                    <input type="email" id="newUserEmail" placeholder="user@mail.com" required>
+                </div>
+                <button type="submit" class="add-user-btn" data-translate="admin_add_btn">Ավելացնել</button>
+            </form>
+
+            <h3 style="margin-top: 30px;" data-translate="admin_users_list">👥 Գրանցված Օգտատերեր</h3>
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th data-translate="table_name">Անուն</th>
+                        <th data-translate="table_email">Էլ. հասցե</th>
+                        <th data-translate="table_action">Գործողություն</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- ԹԱՐԳՄԱՆՈՒԹՅՈՒՆՆԵՐԻ ԲԱԶԱ ---
+    const translations = {
+        hy: {
+            home_nav: "Գլխավոր",
+            films_nav: "Ֆիլմեր",
+            admin_btn: "Admin Panel",
+            login_btn: "Log In",
+            modal_title: "Մուտք / Գրանցում",
+            email_label: "Էլ. հասցե",
+            password_label: "Գաղտնաբառ",
+            login_submit: "Մուտք Գործել",
+            watch_trailer: "🎬 Դիտել Թրեյլերը YouTube-ում",
+            hero_title: "Բարի գալուստ MovieCatalog",
+            hero_subtitle: "Փնտրիր և բացահայտիր քո սիրելի ֆիլմերն ու դրանց պաշտոնական թրեյլերները մեկ վայրում։",
+            search_placeholder: "Մուտքագրեք անվանումը և սեղմեք Enter...",
+            dropdown_title: "🎭 Ընտրեք Ժանրը",
+            genre_scifi: "Գիտ. Ֆանտաստիկա",
+            genre_drama: "Դրամա",
+            genre_action: "Մարտաֆիլմ",
+            genre_thriller: "Դետեկտիվ",
+            genre_comedy: "Կատակերգություն",
+            genre_fantasy: "Ֆենտեզի",
+            genre_animation: "Անիմացիա",
+            genre_all: "Բոլորը",
+            trending_title: "Թրենդային Ֆիլմեր",
+            all_movies_title: "Բոլոր Ֆիլմերը",
+            admin_title_header: "⚙️ Օգտատերերի և Ֆիլմերի Կառավարման Վահանակ",
+            back_home: "← Հետ Դեպի Գլխավոր",
+            admin_name_label: "Անուն",
+            admin_email_label: "Էլ. հասցե",
+            admin_add_btn: "Ավելացնել",
+            table_name: "Անուն",
+            table_email: "Էլ. հասցե",
+            table_action: "Գործողություն",
+            delete_btn: "Ջնջել",
+            confirm_delete: "Վստա՞հ եք, որ ուզում եք ջնջել այս օգտատիրոջը։",
+            confirm_delete_movie: "Վստա՞հ եք, որ ուզում եք ջնջել այս ֆիլմը։",
+            welcome_alert: "Բարով եկաք, {name}։ Դուք հաջողությամբ գրանցվեցիք։",
+            no_movie_found: "Այդպիսի ֆիլմ գոյություն չունի",
+            admin_add_movie_section: "🎬 Ավելացնել Նոր Ֆիլմ",
+            admin_movie_img: "Նկարի հղում (URL)",
+            admin_movie_genre: "Ժանրի տեսակ",
+            admin_movie_trailer: "YouTube Trailer ID",
+            admin_add_movie_btn: "Ավելացնել Ֆիլմ",
+            admin_movies_list: "🎬 Գոյություն ունեցող Ֆիլմեր",
+            admin_add_user_section: "👥 Ավելացնել Նոր Օգտատեր",
+            admin_users_list: "👥 Գրանցված Օգտատերեր",
+            table_movie_title: "Անվանում",
+            table_movie_genre: "Ժանր"
+        },
+        en: {
+            home_nav: "Home",
+            films_nav: "Movies",
+            admin_btn: "Admin Panel",
+            login_btn: "Log In",
+            modal_title: "Login / Register",
+            email_label: "Email Address",
+            password_label: "Password",
+            login_submit: "Sign In",
+            watch_trailer: "🎬 Watch Trailer on YouTube",
+            hero_title: "Welcome to MovieCatalog",
+            hero_subtitle: "Search and discover your favorite movies and their official trailers in one place.",
+            search_placeholder: "Type movie title and press Enter...",
+            dropdown_title: "🎭 Select Genre",
+            genre_scifi: "Sci-Fi",
+            genre_drama: "Drama",
+            genre_action: "Action",
+            genre_thriller: "Thriller",
+            genre_comedy: "Comedy",
+            genre_fantasy: "Fantasy",
+            genre_animation: "Animation",
+            genre_all: "All Movies",
+            trending_title: "Trending Movies",
+            all_movies_title: "All Movies",
+            admin_title_header: "⚙️ Users & Movies Management Dashboard",
+            back_home: "← Back to Home",
+            admin_name_label: "Name",
+            admin_email_label: "Email",
+            admin_add_btn: "Add User",
+            table_name: "Name",
+            table_email: "Email",
+            table_action: "Action",
+            delete_btn: "Delete",
+            confirm_delete: "Are you sure you want to delete this user?",
+            confirm_delete_movie: "Are you sure you want to delete this movie?",
+            welcome_alert: "Welcome, {name}! You have successfully registered.",
+            no_movie_found: "No such movie exists",
+            admin_add_movie_section: "🎬 Add New Movie",
+            admin_movie_img: "Image Link (URL)",
+            admin_movie_genre: "Genre Type",
+            admin_movie_trailer: "YouTube Trailer ID",
+            admin_add_movie_btn: "Add Movie",
+            admin_movies_list: "🎬 Existing Movies",
+            admin_add_user_section: "👥 Add New User",
+            admin_users_list: "👥 Registered Users",
+            table_movie_title: "Title",
+            table_movie_genre: "Genre"
+        },
+        ru: {
+            home_nav: "Главная",
+            films_nav: "Фильмы",
+            admin_btn: "Админка",
+            login_btn: "Войти",
+            modal_title: "Вход / Регистрация",
+            email_label: "Эл. почта",
+            password_label: "Пароль",
+            login_submit: "Войти",
+            watch_trailer: "🎬 Смотреть трейлер на YouTube",
+            hero_title: "Добро пожаловать в MovieCatalog",
+            hero_subtitle: "Ищите и открывайте для себя любимые фильмы в одном месте.",
+            search_placeholder: "Введите название...",
+            dropdown_title: "🎭 Выберите жанр",
+            genre_scifi: "Науч. Фантастика",
+            genre_drama: "Драма",
+            genre_action: "Боевик",
+            genre_thriller: "Детектив",
+            genre_comedy: "Комедия",
+            genre_fantasy: "Фэнтези",
+            genre_animation: "Анимация",
+            genre_all: "Все",
+            trending_title: "Трендовые фильмы",
+            all_movies_title: "Все фильмы",
+            admin_title_header: "⚙️ Панель управления пользователями и фильмами",
+            back_home: "← На главную",
+            admin_name_label: "Имя",
+            admin_email_label: "Эл. почта",
+            admin_add_btn: "Добавить",
+            table_name: "Имя",
+            table_email: "Эл. почта",
+            table_action: "Действие",
+            delete_btn: "Удалить",
+            confirm_delete: "Вы уверены?",
+            confirm_delete_movie: "Вы уверены, что хотите удалить этот фильм?",
+            welcome_alert: "Добро пожаловать, {name}!",
+            no_movie_found: "Такого фильма не существует",
+            admin_add_movie_section: "🎬 Добавить новый фильм",
+            admin_movie_img: "Ссылка на изображение (URL)",
+            admin_movie_genre: "Жанр",
+            admin_movie_trailer: "YouTube Trailer ID",
+            admin_add_movie_btn: "Добавить фильм",
+            admin_movies_list: "🎬 Существующие фильмы",
+            admin_add_user_section: "👥 Добавить нового пользователя",
+            admin_users_list: "👥 Зарегистрированные пользователи",
+            table_movie_title: "Название",
+            table_movie_genre: "Жанр"
+        }
+    };
+
+    // --- ՖԻԼՄԵՐԻ ՀԱՐՈՒՍՏ ՑՈՒՑԱԿ (20 ՖԻԼՄԵՐ) ---
+    const defaultMoviesData = [
+        {
+            id: 1,
+            img: "https://m.media-amazon.com/images/M/MV5BYzdjMDAxZGItMjI2My00ODA1LTlkNzItOWFjMDU5ZDJlYWY3XkEyXkFqcGc@._V1_.jpg",
+            genreKey: "scifi",
+            trailerId: "zSWdZVtXT7E",
+            translations: {
+                hy: { title: "Ինտերստելար", genre: "Գիտական Ֆանտաստիկա", shortDesc: "Տիեզերագնացները փնտրում են նոր տուն մարդկության համար։", desc: "Ֆիլմ տիեզերագնացների մասին, ովքեր փնտրում են նոր տուն մարդկության համար՝ անցնելով սև խոռոչի միջով։" },
+                en: { title: "Interstellar", genre: "Sci-Fi", shortDesc: "Explorers travel through a wormhole in search of a new home.", desc: "When Earth becomes uninhabitable, a team of explorers undertakes the most important mission in human history." },
+                ru: { title: "Интерстеллар", genre: "Научная Фантастика", shortDesc: "Космонавты ищут новый дом для человечества в глубинах космоса.", desc: "Когда засуха и пыльные бури приводят человечество к продовольственному кризису, группа исследователей отправляется сквозь червоточину." }
+            }
+        },
+        {
+            id: 2,
+            img: "https://upload.wikimedia.org/wikipedia/en/2/2e/Inception_%282010%29_theatrical_poster.jpg",
+            genreKey: "thriller",
+            trailerId: "YoHD9XEInc0",
+            translations: {
+                hy: { title: "Սկիզբ", genre: "Թրիլեր", shortDesc: "Տաղանդավոր գողը ներխուժում է մարդկանց ենթագիտակցություն երազում։", desc: "Դոմ Քոբը գողանում է արժեքավոր գաղտնիքներ ենթագիտակցության խորքերից՝ երազների միջոցով։" },
+                en: { title: "Inception", genre: "Thriller", shortDesc: "A thief steals corporate secrets through dream-sharing technology.", desc: "A skilled thief, the absolute best in the dangerous art of extraction, steals valuable secrets from deep within the subconscious during the dream state." },
+                ru: { title: "Начало", genre: "Триллер", shortDesc: "Профессиональный вор проникает в чужие сны, чтобы извлечь тайны.", desc: "Кобб — талантливый вор, лучший в искусстве извлечения: он крадет ценные секреты из глубин подсознания во время сна." }
+            }
+        },
+        {
+            id: 3,
+            img: "https://armmix.org/uploads/posts/2023-07/vjhk.webp",
+            genreKey: "action",
+            trailerId: "EXeTwQWrcwY",
+            translations: {
+                hy: { title: "Մութ Ասպետը", genre: "Մարտաֆիլմ", shortDesc: "Բեթմենը բախվում է իր ամենավտանգավոր թշնամու՝ Ջոկերի հետ։", desc: "Բեթմենը բախվում է քաոս ստեղծող Ջոկերի հետ, ով փորձում է ոչնչացնել Գոթեմ քաղաքի հասարակարգը։" },
+                en: { title: "The Dark Knight", genre: "Action", shortDesc: "Batman faces his most dangerous psychological adversary: The Joker.", desc: "With the help of Allies, Batman faces a rising criminal mastermind known as the Joker, who thrusts Gotham into anarchy." },
+                ru: { title: "Тёмный рыцарь", genre: "Боевик", shortDesc: "Бэтмен борется со своим главным и самым безумным врагом — Джокером.", desc: "Бэтмен поднимает ставки в войне с криминалом. Но новый безумный злодей Джокер погружает Готэм в полный хаос." }
+            }
+        },
+        {
+            id: 4,
+            img: "https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_.jpg",
+            genreKey: "scifi",
+            trailerId: "5PSNL1q3fc8",
+            translations: {
+                hy: { title: "Ավատար", genre: "Գիտական Ֆանտաստիկա", shortDesc: "Պարալիզացված զինվորը նոր կյանք է սկսում Պանդորա մոլորակում։", desc: "Նախկին ծովային հետևակայինը ուղարկվում է Պանդորա մոլորակ, որտեղ սիրահարվում է տեղաբնիկ նավի ցեղի աղջկան:" },
+                en: { title: "Avatar", genre: "Sci-Fi", shortDesc: "A paraplegic Marine dispatched to the moon Pandora.", desc: "Jake Sully is torn between following his orders and protecting the alien world he feels is his home." },
+                ru: { title: "Аватар", genre: "Научная Фантастика", shortDesc: "Бывший пехотинец отправляется на удивительную планету Пандора.", desc: "Джейк Салли, прикованный к инвалидному креслу, становится оператором аватара и защищает племя На'ви." }
+            }
+        },
+        {
+            id: 5,
+            img: "https://m.media-amazon.com/images/M/MV5BN2JkMDc5MGQtZjg3YS00NmFiLWIyZmQtZTJmNTM5MjVmYTQ4XkEyXkFqcGc@._V1_QL75_UX190_CR0,0,190,281_.jpg",
+            genreKey: "drama",
+            trailerId: "uYPbbksJxIg",
+            translations: {
+                hy: { title: "Օպենհայմեր", genre: "Դրամա", shortDesc: "Ատոմային ռումբի ստեղծող Ռոբերտ Օպենհայմերի պատմությունը։", desc: "Ֆիլմը պատմում է ֆիզիկոս Ջ. Ռոբերտ Օպենհայմերի կյանքի և նրա դերի մասին ատոմային ռումբի ստեղծման գործում։" },
+                en: { title: "Oppenheimer", genre: "Drama", shortDesc: "The story of American scientist J. Robert Oppenheimer and his role in developing the atomic bomb.", desc: "A feature documentary and drama covering the epic story of Manhattan Project scientist J. Robert Oppenheimer." },
+                ru: { title: "Оппенгеймер", genre: "Драма", shortDesc: "История жизни создателя атомной бомбы Роберта Оппенгеймера.", desc: "История жизни американского физика-теоретика Роберта Оппенгеймера, который стоял во главе первых разработок ядерного оружия." }
+            }
+        },
+        {
+            id: 6,
+            img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRtePT8AYFSTJn1-afSQyceFFETK6DMMShLofW68rv69Q&s=10",
+            genreKey: "fantasy",
+            trailerId: "VyHV0BRFcVQ",
+            translations: {
+                hy: { title: "Հարրի Փոթերը և Փիլիսոփայական Քարը", genre: "Ֆենտեզի", shortDesc: "Երիտասարդ տղան իմանում է, որ ինքը կախարդ է, և գնում է Հոգվարթս։", desc: "Հարրի Փոթերը իր 11-ամյակին իմանում է, որ ինքը հզոր կախարդ է և հրավիրված է սովորելու Հոգվարթս դպրոցում։" },
+                en: { title: "Harry Potter & the Sorcerer's Stone", genre: "Fantasy", shortDesc: "An orphaned boy enrolls in a school of wizardry.", desc: "Harry Potter, an eleven-year-old orphan, discovers that he is a wizard and is invited to study magic at Hogwarts." },
+                ru: { title: "Гарри Поттер и Философский Камень", genre: "Фэнтези", shortDesc: "Мальчик-сирота узнает, что он волшебник, и едет в Хогвартс.", desc: "Одиннадцатилетний мальчик-сирота Гарри узнает, что его родители были магами, и отправляется учиться в школу чародейства." }
+            }
+        },
+        {
+            id: 7,
+            img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSRy2lhmw5ZwFeswd3I-TIkMOn3AHHmPBhQo6HpQwvM5g&s=10",
+            genreKey: "drama",
+            trailerId: "6hB3S9bIaco",
+            translations: {
+                hy: { title: "Գլադիատոր", genre: "Դրամա", shortDesc: "Հռոմեացի գեներալը դառնում է գլադիատոր՝ վրեժ լուծելու համար։", desc: "Հզոր գեներալ Մաքսիմուսը դավաճանվում է կայսեր որդու կողմից և դառնում սովորական գլադիատոր՝ ընտանիքի սպանության վրեժը լուծելու համար։" },
+                en: { title: "Gladiator", genre: "Drama", shortDesc: "A former Roman General sets out to exact vengeance against the corrupt emperor.", desc: "Maximus, a powerful general, is betrayed and forced into slavery as a gladiator, rising to avenge his family." },
+                ru: { title: "Гладиатор", genre: "Драма", shortDesc: "Римский генерал становится гладиатором, чтобы отомстить за свою семью.", desc: "Великий полководец Максимус, ставший жертвой придворных интриг, вынужден драться на арене Колизея как простой раб." }
+            }
+        },
+        {
+            id: 8,
+            img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRtePT8AYFSTJn1-afSQyceFFETK6DMMShLofW68rv69Q&s=10",
+            genreKey: "drama",
+            trailerId: "Ki4haFrqgAl",
+            translations: {
+                hy: { title: "Կանաչ Մղոն", genre: "Դրամա", shortDesc: "Բանտապահը հայտնաբերում է, որ դատապարտյալը օժտված է գերբնական ուժով։", desc: "Մահապատժի ենթարկվածների բաժնի ղեկավարը հասկանում է, որ նոր հսկա բանտարկյալը ունի հրաշքներ գործելու աստվածային ձիրք:" },
+                en: { title: "The Green Mile", genre: "Drama", shortDesc: "The lives of guards on death row are affected by a gentle giant with miraculous powers.", desc: "Death Row guards at a Southern prison in the 1930s discover that their latest inmate possesses a miraculous gift." },
+                ru: { title: "Зеленая Миля", genre: "Драма", shortDesc: "История о надзирателях, встретивших удивительного заключенного с божьим даром.", desc: "Пол Эджкомб работает в тюрьме для смертников, куда однажды привозят гиганта Джона Коффи, обладающего исцеляющей силой." }
+            }
+        },
+        {
+            id: 9,
+            img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT4cTB2rW5ndVvSBmbC9n8FbG6QKThTt2Q5IcF3NTVxBQ&s=10",
+            genreKey: "animation",
+            trailerId: "Rvr68u6k5sI",
+            translations: {
+                hy: { title: "Կոկոյի Գաղտնիքը", genre: "Անիմացիա", shortDesc: "Միգելը հայտնվում է Մեռյալների աշխարհում՝ իր ընտանիքի գաղտնիքը բացահայտելու։", desc: "Երաժիշտ դառնալ երազող փոքրիկ Միգելը պատահաբար ընկնում է նախնիների գեղեցիկ ու երաժշտական աշխարհը:" },
+                en: { title: "Coco", genre: "Animation", shortDesc: "Aspiring musician Miguel enters the Land of the Dead to find his great-great-grandfather.", desc: "Despite his family's baffling generations-old ban on music, Miguel dreams of becoming an accomplished musician." },
+                ru: { title: "Тайна Коко", genre: "Анимация", shortDesc: "Мальчик Мигель отправляется в Страну Мертвых, чтобы стать музыкантом.", desc: "12-летний Мигель мечтает о музыке, несмотря на запрет в его семье, и по воле случая попадает в красочную Страну Мертвых." }
+            }
+        },
+        {
+            id: 10,
+            img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRsUyob1nsYqWJ9N7nXkJoEqFAP7Z17qnBIM8nsOhh74g&s=10",
+            genreKey: "scifi",
+            trailerId: "8g18jFHCLhs",
+            translations: {
+                hy: { title: "Մատրիցա", genre: "Գիտական Ֆանտաստիկա", shortDesc: "Հակերը բացահայտում է, որ իրականությունը համակարգչային սիմուլյացիա է։", desc: "Թոմաս Անդերսոնը (Նեո) հասկանում է, որ մարդկությունը ստրկացված է մեքենաների կողմից, իսկ իրական կյանքը պատրանք է:" },
+                en: { title: "The Matrix", genre: "Sci-Fi", shortDesc: "A computer hacker learns from mysterious rebels about the true nature of his reality.", desc: "Thomas Anderson, a computer programmer led to a fight against the machines controlling our world." },
+                ru: { title: "Матрица", genre: "Научная Фантастика", shortDesc: "Хакер Нео узнает шокирующую правду о нашей реальности.", desc: "Хакер Нео обнаруживает, что привычный мир — лишь иллюзия, созданная машинами, использующими людей как батарейки." }
+            }
+        },
+        {
+            id: 11,
+            img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQHK_FOnat28w5uhq1RKCyunssmIo-vrzuGpTukOIrigQ&s=10",
+            genreKey: "comedy",
+            trailerId: "vKQi3bBA1y8",
+            translations: {
+                hy: { title: "Տանը Մենակ", genre: "Կատակերգություն", shortDesc: "8-ամյա տղան ստիպված է պաշտպանել իր տունը կողոպտիչներից։", desc: "Սուրբ Ծննդյան տոներին Քևինին պատահաբար տանը մենակ են թողնում, և նա իր պատրաստած ծակուղիներով դիմակայում է գողերին:" },
+                en: { title: "Home Alone", genre: "Comedy", shortDesc: "An eight-year-old troublemaker must protect his house from a pair of burglars.", desc: "When 8-year-old Kevin McCallister is accidentally left home alone, he must defend his home against two bumbling thieves." },
+                ru: { title: "Один Дома", genre: "Комедия", shortDesc: "8-летний Кевин защищает свой дом от двух незадачливых грабителей.", desc: "Многодетное семейство улетает в Париж, забыв дома одного из сыновей — Кевина, которому приходится оборонять дом от воров." }
+            }
+        },
+        {
+            id: 12,
+            img: "https://m.media-amazon.com/images/M/MV5BMjMwNDkxMTgzOF5BMl5BanBnXkFtZTgwNTkwNTQ3NjM@._V1_FMjpg_UX1000_.jpg",
+            genreKey: "animation",
+            trailerId: "r5X-hFf6Bwo",
+            translations: {
+                hy: { title: "Հրեշների Կորպորացիա", genre: "Անիմացիա", shortDesc: "Հրեշները վախեցնում են երեխաներին՝ էներգիա ստանալու համար։", desc: "Սալլին և Մայքը լավագույն վախեցնողներն են, բայց երբ նրանց աշխարհ է մտնում փոքրիկ Բուն, ամեն ինչ գլխիվայր է շրջվում:" },
+                en: { title: "Monsters, Inc.", genre: "Animation", shortDesc: "Monsters generate city power by scaring children, until a little girl enters.", desc: "In order to power the city, monsters must scare children so they scream. However, the monsters are actually terrified of the children." },
+                ru: { title: "Корпорация Монстров", genre: "Анимация", shortDesc: "Монстры пугают детей ради энергии, пока к ним не попадает девочка Бу.", desc: "Монстры из городка Монстрополис пугают детей ради детского крика, но очень боятся их самих. Все меняется с появлением девочки Бу." }
+            }
+        },
+        {
+            id: 13,
+            img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQVxGHaHyxXwrK89cGAau-Qyns1pl643vPJwifdZK1RaQ&s=10",
+            genreKey: "fantasy",
+            trailerId: "V75dMMIW2B4",
+            translations: {
+                hy: { title: "Մատանիների Տիրակալը", genre: "Ֆենտեզի", shortDesc: "Ֆրոդոն սկսում է իր վտանգավոր ճանապարհորդությունը՝ ոչնչացնելու Ամենազոր Մատանին։", desc: "Հոբիթ Ֆրոդոն և իր ընկերները պետք է հասնեն Մորդոր՝ ոչնչացնելու չարիքի մատանին:" },
+                en: { title: "The Lord of the Rings", genre: "Fantasy", shortDesc: "A meek Hobbit and eight companions set out to destroy the One Ring.", desc: "A young hobbit, Frodo Baggins, is tasked with destroying the Legendary Ring of Power before Sauron can find it." },
+                ru: { title: "Властелин колец", genre: "Фэнтези", shortDesc: "Хоббит Фродо начинает путь к Роковой горе, чтобы уничтожить Кольцо.", desc: "Фродо Бэггинс отправляется в смертельно опасный поход, чтобы уничтожить Кольцо Всевластья и спасти Средиземье." }
+            }
+        },
+        {
+            id: 14,
+            img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRtePT8AYFSTJn1-afSQyceFFETK6DMMShLofW68rv69Q&s=10",
+            genreKey: "drama",
+            trailerId: "PLl99DfY6b4",
+            translations: {
+                hy: { title: "Փախուստ Շոուշենկից", genre: "Դրամա", shortDesc: "Բանկիրը, ցմահ ազատազրկման դատապարտվելով, չի կորցնում հույսը։", desc: "Էնդի Դյուֆրեյնը սխալմամբ դատապարտվում է ցմահ բանտարկության, բայց տարիների ընթացքում ծրագրում է իր փախուստը:" },
+                en: { title: "The Shawshank Redemption", genre: "Drama", shortDesc: "Over the course of several years, two convicts form a friendship.", desc: "Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency." },
+                ru: { title: "Побег из Шоушенка", genre: "Драма", shortDesc: "Успешный банкир оказывается в суровой тюрьме и планирует свой побег.", desc: "Бухгалтер Энди Дюфрейн несправедливо обвинен в убийстве жены и приговорен к двум пожизненным срокам в Шоушенке." }
+            }
+        },
+        {
+            id: 15,
+            img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQZR08QfbrXogTIyeI-3JJrZ25pbniDVZQKNMjnjQ9Wxw&s=10",
+            genreKey: "comedy",
+            trailerId: "bLvqoHBptjg",
+            translations: {
+                hy: { title: "Ֆորեսթ Գամփ", genre: "Կատակերգություն", shortDesc: "Բարի տղայի պատմությունը, ով ականատես է դառնում ԱՄՆ-ի պատմական իրադարձություններին։", desc: "Ֆորեսթը՝ սահմանափակ մտավոր կարողություններով, բայց բարի սրտով տղան, անցնում է կյանքի զարմանալի ճանապարհով:" },
+                en: { title: "Forrest Gump", genre: "Comedy", shortDesc: "The history of the US unfolds through the perspective of an Alabama man.", desc: "The presidencies of Kennedy and Johnson, the Vietnam War, and other historical events unfold from the perspective of an Alabama man." },
+                ru: { title: "Форрест Гамп", genre: "Комедия", shortDesc: "Невероятная жизнь простодушного парня с добрым сердцем.", desc: "История Форреста Гампа, парня с легкой умственной отсталостью, который становится героем войны и успешным человеком." }
+            }
+        },
+        {
+            id: 16,
+            img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRzQQ1_w_Bqtucn8yJHiif70KjvWuwV1fIbmbYsbGIFAw&s=10",
+            genreKey: "animation",
+            trailerId: "C1m7N6b7_fM",
+            translations: {
+                hy: { title: "Առյուծ Արքան", genre: "Անիմացիա", shortDesc: "Փոքրիկ Սիմբան անցնում է դժվարությունների միջով՝ թագավոր դառնալու համար։", desc: "Փոքրիկ Սիմբան կորցնում է հորը և ստիպված է լինում հեռանալ հայրենիքից, բայց մեծանալով վերադառնում է՝ իր գահը հետ պահանջելու:" },
+                en: { title: "The Lion King", genre: "Animation", shortDesc: "A young lion cub named Simba must overcome adversity to claim his throne.", desc: "Lion cub Simba, son of King Mufasa, flees his kingdom after his father is killed, only to return years later." },
+                ru: { title: "Король Лев", genre: "Анимация", shortDesc: "Юный львенок Симба проходит путь испытаний, чтобы вернуть законный трон.", desc: "У величественного Короля-Льва Муфасы рождается наследник Симба, которому предстоит познать горечь предательства и вернуть прайд." }
+            }
+        },
+        {
+            id: 17,
+            img: "https://m.media-amazon.com/images/M/MV5BN2FjNWExYzEtY2YzOC00YjNlLTllMTQtNmIwM2Q1YzBhOWM1XkEyXkFqcGc@._V1_.jpg",
+            genreKey: "thriller",
+            trailerId: "s7MRVCW2TIE",
+            translations: {
+                hy: { title: "Շերիֆի Անիծյալ Կղզին", genre: "Դետեկտիվ", shortDesc: "Դաշնային մարշալը հետաքննում է հոգեբուժարանի բանտարկյալի անհետացումը։", desc: "Թեդի Դենիելսը ժամանում է կղզու վրա գտնվող հոգեբուժարան՝ անհետացած հիվանդին գտնելու, բայց բախվում է սեփական անցյալի գաղտնիքներին:" },
+                en: { title: "Shutter Island", genre: "Thriller", shortDesc: "A U.S. Marshal investigates the disappearance of a murderer from a hospital.", desc: "In 1954, a U.S. Marshal investigates the disappearance of a murderer who escaped from a hospital for the criminally insane." },
+                ru: { title: "Остров проклятых", genre: "Триллер", shortDesc: "Два судебных пристава расследуют исчезновение пациентки из клиники.", desc: "Два американских судебных пристава отправляются на остров в штате Массачусетс, чтобы расследовать исчезновение детоубийцы." }
+            }
+        },
+        {
+            id: 18,
+            img: "https://m.media-amazon.com/images/M/MV5BMTU2NjA1ODgzMF5BMl5BanBnXkFtZTgwMTM2MTI4MjE@._V1_.jpg",
+            genreKey: "action",
+            trailerId: "S3_048PZ95Y",
+            translations: {
+                hy: { title: "Ջոն Ուիք", genre: "Մարտաֆիլմ", shortDesc: "Պրոֆեսիոնալ մարդասպան Ջոն Ուիքը վերադառնում է գործին վրեժի համար։", desc: "Նախկին վարձու մարդասպանը վերադառնում է քրեական աշխարհ իր շանը սպանողներից վրեժ լուծելու համար:" },
+                en: { title: "John Wick", genre: "Action", shortDesc: "An ex-hit-man comes out of retirement to track down the gangsters.", desc: "An ex-hit-man comes out of retirement to track down the gangsters that took everything from him." },
+                ru: { title: "Джон Уик", genre: "Боевик", shortDesc: "Бывший киллер Джон Уик возвращается в игру ради мести.", desc: "Джон Уик — бывший наемный убийца, который возвращается к своему темному прошлому, чтобы отомстить мафии, укравшей его надежду." }
+            }
+        },
+        {
+            id: 19,
+            img: "https://m.media-amazon.com/images/M/MV5BMTY2ODQ3NjMyMl5BMl5BanBnXkFtZTcwODg0MTUzNA@@._V1_FMjpg_UX1000_.jpg",
+            genreKey: "scifi",
+            trailerId: "HcgJRQWxKnw",
+            translations: {
+                hy: { title: "Գրավիտացիա", genre: "Գիտական Ֆանտաստիկա", shortDesc: "Երկու տիեզերագնացներ պայքարում են գոյատևելու համար տիեզերքի դատարկության մեջ։", desc: "Բժիշկ Ռայան Սթոունը և վետերան տիեզերագնաց Մեթ Կովալսկին հայտնվում են բաց տիեզերքում աղետից հետո:" },
+                en: { title: "Gravity", genre: "Sci-Fi", shortDesc: "Two astronauts work together to survive after an accident.", desc: "A medical engineer on her first shuttle mission and a veteran astronaut find themselves drifting in the deep dark of space." },
+                ru: { title: "Гравитация", genre: "Научная Фантастика", shortDesc: "Два астронавта борются за жизнь в открытом космосе после катастрофы.", desc: "Доктор Райан Стоун и опытный астронавт Мэтт Ковальски оказываются совершенно одни в открытом космосе после крушения их шаттла." }
+            }
+        },
+        {
+            id: 20,
+            img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSI16lz05ri8uTJnICbwEjY-ZnnPlDsWTRXTcPuqbAu2g&s",
+            genreKey: "animation",
+            trailerId: "2zL8BYUz70Q",
+            translations: {
+                hy: { title: "Կայծակնային պատմություն", genre: "Անիմացիա", shortDesc: "Երիտասարդ մրցարշավային մեքենան հասկանում է, որ կյանքում կարևորը ոչ միայն հաղթանակն է։", desc: "ՄակՔուինը մոլորվում է գավառական Ռադիատոր Սփրինգս քաղաքում, որտեղ գտնում է իսկական ընկերներ և սեր:" },
+                en: { title: "Cars", genre: "Animation", shortDesc: "A hotshot racecar named Lightning McQueen gets lost in a small town.", desc: "On the way to the biggest race of his life, McQueen gets stranded in Radiator Springs and learns what's truly important." },
+                ru: { title: "Тачки", genre: "Анимация", shortDesc: "Молодая гоночная машина Маккуин оказывается в забытом богом городке.", desc: "Неукротимый гоночный болид Молния Маккуин из-за случайности попадает в захолустный городок Радиатор-Спрингс." }
+            }
+        }
+    ];
+
+    // --- ԼՈԿԱԼ ՊԱՀՈՑԻ ԿԱՐԳԱՎՈՐՈՒՄՆԵՐ ---
+    if (!localStorage.getItem('movies')) {
+        localStorage.setItem('movies', JSON.stringify(defaultMoviesData));
+    } else {
+        localStorage.setItem('movies', JSON.stringify(defaultMoviesData));
+    }
+    let movies = JSON.parse(localStorage.getItem('movies'));
+
+    const defaultUsers = [
+        { id: 1, username: "Աննա Սարգսյան", email: "anna@mail.ru" },
+        { id: 2, username: "Դավիթ Գրիգորյան", email: "david99@gmail.com" },
+        { id: 3, username: "Մարիամ Ավետիսյան", email: "mariam.avet@yandex.ru" }
+    ];
+    if (!localStorage.getItem('users')) {
+        localStorage.setItem('users', JSON.stringify(defaultUsers));
+    }
+    let users = JSON.parse(localStorage.getItem('users'));
+
+    let currentLang = localStorage.getItem('lang') || 'hy';
+    let currentTheme = localStorage.getItem('theme') || 'dark';
+
+    // --- DOM ՏԱՐՐԵՐ ---
+    const homePage = document.getElementById('homePage');
+    const filmsPage = document.getElementById('filmsPage');
+    const adminPage = document.getElementById('adminPage');
+    const homeNav = document.getElementById('homeNav');
+    const filmsNav = document.getElementById('filmsNav');
+    const adminPageBtn = document.getElementById('adminPageBtn');
+    const backToHomeBtn = document.getElementById('backToHomeBtn');
+    const logoLink = document.getElementById('logoLink');
+    const openModalBtn = document.getElementById('openModalBtn');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const modalOverlay = document.getElementById('modalOverlay');
+    const loginForm = document.getElementById('loginForm');
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    const langSelect = document.getElementById('langSelect');
+    
+    const movieSearch = document.getElementById('movieSearch');
+    const genresDropdown = document.getElementById('genresDropdown');
+    const searchContainer = document.getElementById('searchContainer');
+    const featuredMoviesGrid = document.getElementById('featuredMoviesGrid');
+    const moviesCatalogGrid = document.getElementById('moviesCatalogGrid');
+    const noResultsMessage = document.getElementById('noResultsMessage');
+
+    const usersTableBody = document.getElementById('usersTableBody');
+    const adminMoviesTableBody = document.getElementById('adminMoviesTableBody');
+    const addUserForm = document.getElementById('addUserForm');
+    const addMovieForm = document.getElementById('addMovieForm');
+
+    const movieModalOverlay = document.getElementById('movieModalOverlay');
+    const closeMovieModalBtn = document.getElementById('closeMovieModalBtn');
+    const modalMovieImg = document.getElementById('modalMovieImg');
+    const modalMovieTitle = document.getElementById('modalMovieTitle');
+    const modalMovieGenre = document.getElementById('modalMovieGenre');
+    const modalMovieDesc = document.getElementById('modalMovieDesc');
+    const watchTrailerBtn = document.getElementById('watchTrailerBtn');
+
+    // --- ԹԵՄԱՅԻ ԿԱՌԱՎԱՐՈՒՄ ---
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        themeToggleBtn.innerHTML = theme === 'dark' ? '🌙' : '☀️';
+        localStorage.setItem('theme', theme);
+    }
+    themeToggleBtn.addEventListener('click', () => {
+        currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        applyTheme(currentTheme);
+    });
+
+    // --- ԹԱՐԳՄԱՆՈՒԹՅՈՒՆՆԵՐԻ ԿԻՐԱՌՈՒՄ ---
+    function applyTranslations(lang) {
+        document.querySelectorAll('[data-translate]').forEach(el => {
+            const key = el.getAttribute('data-translate');
+            if (translations[lang] && translations[lang][key]) {
+                if (el.tagName === 'INPUT' && el.hasAttribute('placeholder')) {
+                    el.placeholder = translations[lang][key];
+                } else {
+                    el.textContent = translations[lang][key];
+                }
+            }
+        });
+        movieSearch.placeholder = translations[lang].search_placeholder;
+        renderAll();
+    }
+    
+    langSelect.value = currentLang;
+    langSelect.addEventListener('change', (e) => {
+        currentLang = e.target.value;
+        localStorage.setItem('lang', currentLang);
+        applyTranslations(currentLang);
+    });
+
+    // --- ԷՋԵՐԻ ԱՆՑՈՒՄՆԵՐ ---
+    function switchPage(activePageId, activeNavEl = null) {
+        document.querySelectorAll('.page-section').forEach(section => section.classList.remove('active'));
+        document.getElementById(activePageId).classList.add('active');
+        
+        document.querySelectorAll('.nav-link-item').forEach(link => link.classList.remove('active'));
+        if (activeNavEl) activeNavEl.classList.add('active');
+    }
+
+    homeNav.addEventListener('click', () => switchPage('homePage', homeNav));
+    filmsNav.addEventListener('click', () => switchPage('filmsPage', filmsNav));
+    logoLink.addEventListener('click', (e) => { e.preventDefault(); switchPage('homePage', homeNav); });
+    adminPageBtn.addEventListener('click', () => switchPage('adminPage'));
+    backToHomeBtn.addEventListener('click', () => switchPage('homePage', homeNav));
+
+    // --- ՄՈՒՏՔԻ ՊԱՏՈՒՀԱՆ (LOGIN MODAL) ---
+    openModalBtn.addEventListener('click', () => modalOverlay.style.display = 'flex');
+    closeModalBtn.addEventListener('click', () => modalOverlay.style.display = 'none');
+    modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) modalOverlay.style.display = 'none'; });
+
+    loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const emailVal = document.getElementById('email').value;
+        const tempName = emailVal.split('@')[0];
+        
+        if (!users.some(u => u.email.toLowerCase() === emailVal.toLowerCase())) {
+            const newUser = { id: Date.now(), username: tempName, email: emailVal };
+            users.push(newUser);
+            localStorage.setItem('users', JSON.stringify(users));
+            renderUsers();
+        }
+
+        modalOverlay.style.display = 'none';
+        loginForm.reset();
+        
+        let welcomeMsg = translations[currentLang].welcome_alert.replace('{name}', tempName);
+        alert(welcomeMsg);
+    });
+
+    // --- ՈՐՈՆՈՒՄ ԵՎ ԺԱՆՐԵՐ ---
+    movieSearch.addEventListener('focus', () => genresDropdown.classList.add('show'));
+    document.addEventListener('click', (e) => {
+        if (!searchContainer.contains(e.target)) {
+            genresDropdown.classList.remove('show');
+        }
+    });
+
+    movieSearch.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            genresDropdown.classList.remove('show');
+            switchPage('filmsPage', filmsNav);
+            filterMovies(movieSearch.value, 'all');
+        }
+    });
+
+    document.querySelectorAll('.genre-badge-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const genreKey = btn.getAttribute('data-genre-key');
+            genresDropdown.classList.remove('show');
+            switchPage('filmsPage', filmsNav);
+            movieSearch.value = ""; 
+            filterMovies("", genreKey);
+        });
+    });
+
+    function filterMovies(searchText, genreKey) {
+        let filtered = movies;
+
+        if (genreKey && genreKey !== 'all') {
+            filtered = filtered.filter(m => m.genreKey === genreKey);
+        }
+
+        if (searchText.trim() !== "") {
+            const searchLower = searchText.toLowerCase();
+            filtered = filtered.filter(m => {
+                const translation = m.translations[currentLang] || m.translations['en'];
+                return translation.title.toLowerCase().includes(searchLower) || 
+                       translation.shortDesc.toLowerCase().includes(searchLower);
+            });
+        }
+
+        renderCatalogGrid(filtered);
+    }
+
+    // --- ՖԻԼՄԻ ՄԵԾԱՑՎԱԾ ՊԱՏՈՒՀԱՆ (DETAILS MODAL) ---
+    function openMovieModal(movie) {
+        const trans = movie.translations[currentLang] || movie.translations['en'];
+        modalMovieImg.src = movie.img;
+        modalMovieImg.alt = trans.title;
+        modalMovieTitle.textContent = trans.title;
+        modalMovieGenre.textContent = trans.genre;
+        modalMovieDesc.textContent = trans.desc;
+        
+        watchTrailerBtn.href = `https://www.youtube.com/watch?v=${movie.trailerId}`;
+        movieModalOverlay.style.display = 'flex';
+    }
+
+    closeMovieModalBtn.addEventListener('click', () => movieModalOverlay.style.display = 'none');
+    movieModalOverlay.addEventListener('click', (e) => { if(e.target === movieModalOverlay) movieModalOverlay.style.display = 'none'; });
+
+    // --- ԳԵՆԵՐԱՑՈՒՄ (RENDER) ---
+    function createMovieCard(movie) {
+        const trans = movie.translations[currentLang] || movie.translations['en'];
+        const card = document.createElement('div');
+        card.className = 'movie-card';
+        card.innerHTML = `
+            <img class="movie-img" src="${movie.img}" alt="${trans.title}">
+            <div class="movie-content">
+                <div>
+                    <h3>${trans.title}</h3>
+                    <span class="genre">${trans.genre}</span>
+                    <p>${trans.shortDesc}</p>
+                </div>
+            </div>
+        `;
+        card.addEventListener('click', () => openMovieModal(movie));
+        return card;
+    }
+
+    function renderAll() {
+        featuredMoviesGrid.innerHTML = "";
+        movies.slice(0, 3).forEach(m => {
+            featuredMoviesGrid.appendChild(createMovieCard(m));
+        });
+
+        renderCatalogGrid(movies);
+        renderUsers();
+        renderAdminMovies();
+    }
+
+    function renderCatalogGrid(moviesList) {
+        moviesCatalogGrid.innerHTML = "";
+        if (moviesList.length === 0) {
+            noResultsMessage.style.display = 'block';
+        } else {
+            noResultsMessage.style.display = 'none';
+            moviesList.forEach(m => {
+                moviesCatalogGrid.appendChild(createMovieCard(m));
+            });
+        }
+    }
+
+    // --- ԱԴՄԻՆԻ ԳՈՐԾՈՂՈՒԹՅՈՒՆՆԵՐ ---
+    function renderUsers() {
+        usersTableBody.innerHTML = "";
+        users.forEach(u => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${u.id}</td>
+                <td>${u.username}</td>
+                <td>${u.email}</td>
+                <td><button class="delete-btn" data-id="${u.id}">${translations[currentLang].delete_btn}</button></td>
+            `;
+            usersTableBody.appendChild(tr);
+        });
+
+        document.querySelectorAll('#usersTableBody .delete-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                if (confirm(translations[currentLang].confirm_delete)) {
+                    const id = parseInt(e.target.getAttribute('data-id'));
+                    users = users.filter(u => u.id !== id);
+                    localStorage.setItem('users', JSON.stringify(users));
+                    renderUsers();
+                }
+            });
+        });
+    }
+
+    function renderAdminMovies() {
+        adminMoviesTableBody.innerHTML = "";
+        movies.forEach(m => {
+            const trans = m.translations[currentLang] || m.translations['en'];
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${m.id}</td>
+                <td>${trans.title}</td>
+                <td>${trans.genre}</td>
+                <td><button class="delete-btn" data-id="${m.id}">${translations[currentLang].delete_btn}</button></td>
+            `;
+            adminMoviesTableBody.appendChild(tr);
+        });
+
+        document.querySelectorAll('#adminMoviesTableBody .delete-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                if (confirm(translations[currentLang].confirm_delete_movie)) {
+                    const id = parseInt(e.target.getAttribute('data-id'));
+                    movies = movies.filter(m => m.id !== id);
+                    localStorage.setItem('movies', JSON.stringify(movies));
+                    renderAll();
+                }
+            });
+        });
+    }
+
+    addUserForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('newUsername').value;
+        const email = document.getElementById('newUserEmail').value;
+        
+        const newUser = { id: Date.now(), username: name, email: email };
+        users.push(newUser);
+        localStorage.setItem('users', JSON.stringify(users));
+        
+        addUserForm.reset();
+        renderUsers();
+    });
+
+    addMovieForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const genreSelect = document.getElementById('movieGenreKey');
+        const selectedGenreText = genreSelect.options[genreSelect.selectedIndex].text;
+
+        const newMovie = {
+            id: Date.now(),
+            img: document.getElementById('movieImgUrl').value,
+            genreKey: genreSelect.value,
+            trailerId: document.getElementById('movieTrailerId').value,
+            translations: {
+                hy: {
+                    title: document.getElementById('movieTitleHy').value,
+                    genre: selectedGenreText,
+                    shortDesc: document.getElementById('movieShortDescHy').value,
+                    desc: document.getElementById('movieFullDescHy').value
+                },
+                en: {
+                    title: document.getElementById('movieTitleEn').value,
+                    genre: genreSelect.value.toUpperCase(),
+                    shortDesc: document.getElementById('movieShortDescEn').value,
+                    desc: document.getElementById('movieFullDescEn').value
+                },
+                ru: {
+                    title: document.getElementById('movieTitleRu').value,
+                    genre: selectedGenreText,
+                    shortDesc: document.getElementById('movieShortDescRu').value,
+                    desc: document.getElementById('movieFullDescRu').value
+                }
+            }
+        };
+
+        movies.push(newMovie);
+        localStorage.setItem('movies', JSON.stringify(movies));
+        
+        addMovieForm.reset();
+        renderAll();
+        alert("Ֆիլմը հաջողությամբ ավելացվեց։");
+    });
+
+    // --- ՍԿԶԲՆԱԿԱՆԱՑՈՒՄ ---
+    applyTheme(currentTheme);
+    applyTranslations(currentLang);
+</script>
+{% endblock %}
